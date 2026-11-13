@@ -21,6 +21,8 @@ const vatRow = document.querySelector("#vat-row");
 const senderInput = document.querySelector("#sender");
 const recipientInput = document.querySelector("#recipient");
 const estimateNumberInput = document.querySelector("#estimate-number");
+const estimateTypeSelect = document.querySelector("#estimate-type");
+const positionNameHeading = document.querySelector("#position-name-heading");
 const commentInput = document.querySelector("#comment");
 const savePdfButton = document.querySelector("#save-pdf");
 const newEstimateButton = document.querySelector("#new-estimate");
@@ -36,10 +38,30 @@ const draftFields = {
   recipient: recipientInput,
   number: estimateNumberInput,
   date: dateInput,
+  type: estimateTypeSelect,
   discount: discountInput,
   vat: vatInput,
   currency: currencySelect,
   comment: commentInput,
+};
+
+const measurementUnits = ["шт.", "м.", "кв.м.", "куб.м."];
+const estimateTypeSettings = {
+  "РАБОТА": {
+    nameLabel: "Наименование работ",
+    placeholder: "Название работы",
+    units: measurementUnits,
+  },
+  "УСЛУГА": {
+    nameLabel: "Наименование услуг",
+    placeholder: "Название услуги",
+    units: measurementUnits,
+  },
+  "ТОВАР": {
+    nameLabel: "Наименование товара",
+    placeholder: "Название товара",
+    units: [...measurementUnits, "комплект", "пара"],
+  },
 };
 
 const numberFormatter = new Intl.NumberFormat("ru-RU", {
@@ -100,13 +122,19 @@ function readDraft() {
     }
 
     const draft = JSON.parse(saved);
+    // Сохраняем совместимость с черновиками, в которых ещё нет вида сметы.
+    if (draft?.fields && draft.fields.type === undefined) {
+      draft.fields.type = "РАБОТА";
+    }
     const validFields = draft?.fields && Object.keys(draftFields).every((key) => typeof draft.fields[key] === "string");
     const validPositions = Array.isArray(draft?.positions) && draft.positions.every((position) => (
       position && ["name", "quantity", "unit", "price"].every((field) => typeof position[field] === "string")
-      && ["шт", "час", "услуга"].includes(position.unit)
+      && [...estimateTypeSettings["ТОВАР"].units, "шт", "час", "услуга"].includes(position.unit)
     ));
 
-    if (draft?.version !== 1 || !validFields || !validPositions || !["₸", "₽", "$", "€"].includes(draft.fields.currency)) {
+    if (draft?.version !== 1 || !validFields || !validPositions
+      || !["₸", "₽", "$", "€"].includes(draft.fields.currency)
+      || !["РАБОТА", "УСЛУГА", "ТОВАР"].includes(draft.fields.type)) {
       throw new Error("Некорректный черновик");
     }
 
@@ -170,6 +198,40 @@ function calculateTotals(subtotal, discountPercent, vatPercent) {
   };
 }
 
+function getPositionSettings() {
+  return estimateTypeSettings[estimateTypeSelect.value] || estimateTypeSettings["РАБОТА"];
+}
+
+function configurePositionRow(row, unitValue = row.querySelector('[data-field="unit"]').value) {
+  const settings = getPositionSettings();
+  row.querySelector('[data-label-for="name"]').textContent = settings.nameLabel;
+  row.querySelector('[data-field="name"]').placeholder = settings.placeholder;
+
+  const unitSelect = row.querySelector('[data-field="unit"]');
+  const normalizedUnit = unitValue === "шт" ? "шт." : unitValue;
+  const options = settings.units.map((unit) => {
+    const option = document.createElement("option");
+    option.value = unit;
+    option.textContent = unit;
+    return option;
+  });
+  unitSelect.replaceChildren(...options);
+  unitSelect.value = settings.units.includes(normalizedUnit) ? normalizedUnit : settings.units[0];
+  return unitSelect.value !== normalizedUnit;
+}
+
+function updatePositionsForType({ announce = false } = {}) {
+  positionNameHeading.textContent = getPositionSettings().nameLabel;
+  let unitsReset = false;
+  for (const row of positionsBody.rows) {
+    unitsReset = configurePositionRow(row) || unitsReset;
+  }
+  if (announce) {
+    rowAnnouncement.textContent = `Вид сметы: ${estimateTypeSelect.value}.`
+      + (unitsReset ? " Недоступные единицы измерения заменены на «шт.»." : "");
+  }
+}
+
 function recalculate() {
   let subtotal = 0;
   const currency = currencySelect.value || "₸";
@@ -179,7 +241,7 @@ function recalculate() {
     subtotal += lineTotal;
     row.querySelector('[data-field="total"]').textContent = formatMoney(lineTotal);
     row.querySelector(".price-currency").textContent = currency;
-    row.querySelector('[data-field="price"]').setAttribute("aria-label", `Цена, ${currency}`);
+    row.querySelector('[data-field="price"]').setAttribute("aria-label", `Цена за 1 ед.изм., ${currency}`);
   }
 
   const totals = calculateTotals(roundAmount(subtotal), parseNumber(discountInput.value), parseNumber(vatInput.value));
@@ -197,7 +259,7 @@ function recalculate() {
 function updateRowLabels() {
   Array.from(positionsBody.rows).forEach((row, index) => {
     row.querySelector(".remove-button").setAttribute("aria-label", `Удалить позицию ${index + 1}`);
-    row.querySelector('[data-field="total"]').setAttribute("aria-label", `Сумма позиции ${index + 1}`);
+    row.querySelector('[data-field="total"]').setAttribute("aria-label", `Общая стоимость позиции ${index + 1}`);
   });
 }
 
@@ -213,6 +275,7 @@ function preparePrint() {
   document.querySelector("#print-title").textContent = getEstimateHeading();
   document.querySelector("#print-sender").textContent = senderInput.value.trim() || "—";
   document.querySelector("#print-recipient").textContent = recipientInput.value.trim() || "—";
+  document.querySelector("#print-estimate-type").textContent = estimateTypeSelect.value;
 
   for (const row of positionsBody.rows) {
     row.querySelector('[data-print-field="name"]').textContent = row.querySelector('[data-field="name"]').value.trim() || "—";
@@ -241,7 +304,7 @@ function buildShareText() {
   if (recipientInput.value.trim()) {
     lines.push(`Для кого: ${recipientInput.value.trim()}`);
   }
-  lines.push("");
+  lines.push(`Вид сметы: ${estimateTypeSelect.value}`, "");
 
   for (const row of positionsBody.rows) {
     const name = row.querySelector('[data-field="name"]').value.trim();
@@ -322,6 +385,7 @@ function startNewEstimate() {
   isRestoringDraft = true;
   form.reset();
   positionsBody.replaceChildren();
+  updatePositionsForType();
   estimateNumberInput.value = number;
   dateInput.value = getToday();
   addPosition({ focus: false });
@@ -349,6 +413,7 @@ function addPosition({ focus = true, values } = {}) {
     }
   }
 
+  configurePositionRow(row, values?.unit);
   positionsBody.append(fragment);
   updateRowLabels();
   recalculate();
@@ -367,6 +432,7 @@ form.addEventListener("change", saveDraft);
 discountInput.addEventListener("input", recalculate);
 vatInput.addEventListener("input", recalculate);
 currencySelect.addEventListener("change", recalculate);
+estimateTypeSelect.addEventListener("change", () => updatePositionsForType({ announce: true }));
 
 discountInput.addEventListener("change", () => {
   if (parseNumber(discountInput.value) > 100) {
@@ -442,4 +508,5 @@ if (positionsBody.rows.length === 0) {
   addPosition({ focus: false });
 }
 isRestoringDraft = false;
+updatePositionsForType();
 recalculate();

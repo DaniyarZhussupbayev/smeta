@@ -46,20 +46,32 @@
           </div>
         </section>
 
+        <section class="card details" aria-labelledby="estimate-type-title">
+          <label class="field" for="estimate-type">
+            <span id="estimate-type-title">ВИД СМЕТЫ</span>
+            <select id="estimate-type" name="estimate-type">
+              <option value="РАБОТА">РАБОТА</option>
+              <option value="УСЛУГА">УСЛУГА</option>
+              <option value="ТОВАР">ТОВАР</option>
+            </select>
+            <span id="print-estimate-type" class="print-value"></span>
+          </label>
+        </section>
+
         <section class="card positions" aria-labelledby="positions-title">
           <div class="positions-header">
-            <h2 id="positions-title">Позиции</h2>
+            <h2 id="positions-title">ПОЗИЦИИ</h2>
             <span id="currency-note" class="currency-note">Все суммы — ₸</span>
           </div>
 
           <table class="positions-table" aria-labelledby="positions-title">
             <thead>
               <tr>
-                <th scope="col" class="name-column">Наименование</th>
+                <th id="position-name-heading" scope="col" class="name-column">Наименование работ</th>
+                <th scope="col" class="unit-column">Единица измерения</th>
                 <th scope="col" class="quantity-column">Количество</th>
-                <th scope="col" class="unit-column">Единица</th>
-                <th scope="col" class="price-column">Цена</th>
-                <th scope="col" class="amount-column">Сумма</th>
+                <th scope="col" class="price-column">Цена за 1 ед.изм.</th>
+                <th scope="col" class="amount-column">Общая стоимость</th>
                 <th scope="col" class="remove-column"><span class="visually-hidden">Удаление</span></th>
               </tr>
             </thead>
@@ -148,26 +160,27 @@
     <template id="position-template">
       <tr class="position-row">
         <td class="name-cell">
-          <label class="mobile-label" data-label-for="name">Наименование</label>
-          <input class="position-name" data-field="name" type="text" placeholder="Товар или услуга">
+          <label class="mobile-label" data-label-for="name">Наименование работ</label>
+          <input class="position-name" data-field="name" type="text" placeholder="Название работы">
           <span class="print-value" data-print-field="name"></span>
+        </td>
+        <td class="unit-cell">
+          <label class="mobile-label" data-label-for="unit">Единица измерения</label>
+          <select data-field="unit">
+            <option value="шт.">шт.</option>
+            <option value="м.">м.</option>
+            <option value="кв.м.">кв.м.</option>
+            <option value="куб.м.">куб.м.</option>
+          </select>
+          <span class="print-value" data-print-field="unit"></span>
         </td>
         <td class="quantity-cell">
           <label class="mobile-label" data-label-for="quantity">Количество</label>
           <input class="number-input" data-field="quantity" type="text" inputmode="decimal" placeholder="0" spellcheck="false">
           <span class="print-value" data-print-field="quantity"></span>
         </td>
-        <td class="unit-cell">
-          <label class="mobile-label" data-label-for="unit">Единица</label>
-          <select data-field="unit">
-            <option value="шт">шт</option>
-            <option value="час">час</option>
-            <option value="услуга">услуга</option>
-          </select>
-          <span class="print-value" data-print-field="unit"></span>
-        </td>
         <td class="price-cell">
-          <label class="mobile-label" data-label-for="price">Цена</label>
+          <label class="mobile-label" data-label-for="price">Цена за 1 ед.изм.</label>
           <div class="price-input-wrap">
             <input class="number-input" data-field="price" type="text" inputmode="decimal" placeholder="0" spellcheck="false">
             <span class="price-currency" aria-hidden="true">₸</span>
@@ -175,7 +188,7 @@
           <span class="print-value" data-print-field="price"></span>
         </td>
         <td class="amount-cell">
-          <span class="mobile-label" aria-hidden="true">Сумма</span>
+          <span class="mobile-label" aria-hidden="true">Общая стоимость</span>
           <output class="line-total" data-field="total">0 ₸</output>
         </td>
         <td class="remove-cell">

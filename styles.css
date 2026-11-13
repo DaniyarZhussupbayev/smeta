@@ -186,6 +186,7 @@ input[type="date"] {
   background: #f8fafb;
   color: var(--muted);
   text-align: left;
+  overflow-wrap: anywhere;
   font-size: 13px;
   font-weight: 600;
 }
@@ -207,15 +208,15 @@ input[type="date"] {
 }
 
 .name-column {
-  width: 33%;
+  width: 30%;
 }
 
 .quantity-column {
-  width: 13%;
+  width: 12%;
 }
 
 .unit-column {
-  width: 13%;
+  width: 16%;
 }
 
 .price-column {
@@ -223,7 +224,7 @@ input[type="date"] {
 }
 
 .amount-column {
-  width: 16%;
+  width: 17%;
 }
 
 .remove-column {
@@ -500,12 +501,15 @@ textarea {
   }
 
   .name-column {
-    width: 25%;
+    width: 24%;
   }
 
-  .quantity-column,
+  .quantity-column {
+    width: 13%;
+  }
+
   .unit-column {
-    width: 15%;
+    width: 19%;
   }
 
   .amount-column {
@@ -595,11 +599,13 @@ textarea {
     display: block;
     width: auto;
     height: auto;
+    min-height: 36px;
     margin-bottom: 8px;
     overflow: visible;
     clip-path: none;
     white-space: normal;
     font-size: 13px;
+    line-height: 1.4;
     font-weight: 600;
     color: var(--muted);
   }

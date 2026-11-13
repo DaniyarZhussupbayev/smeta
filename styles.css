@@ -78,7 +78,18 @@ textarea:focus {
 }
 
 .page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
   margin-bottom: 30px;
+}
+
+.page-header-image {
+  display: block;
+  width: clamp(80px, 20vw, 144px);
+  height: auto;
+  border-radius: 12px;
 }
 
 h1,
@@ -517,6 +528,7 @@ textarea {
   }
 
   .page-header {
+    gap: 12px;
     margin-bottom: 24px;
   }
 

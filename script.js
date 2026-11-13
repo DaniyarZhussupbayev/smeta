@@ -18,6 +18,11 @@ const vatOutput = document.querySelector("#vat-amount");
 const discountRow = document.querySelector("#discount-row");
 const discountedRow = document.querySelector("#discounted-row");
 const vatRow = document.querySelector("#vat-row");
+const senderInput = document.querySelector("#sender");
+const recipientInput = document.querySelector("#recipient");
+const estimateNumberInput = document.querySelector("#estimate-number");
+const commentInput = document.querySelector("#comment");
+const savePdfButton = document.querySelector("#save-pdf");
 
 const numberFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
@@ -25,6 +30,10 @@ const numberFormatter = new Intl.NumberFormat("ru-RU", {
 
 const moneyFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 0,
+});
+
+const printNumberFormatter = new Intl.NumberFormat("ru-RU", {
+  maximumFractionDigits: 20,
 });
 
 let nextRowId = 0;
@@ -108,6 +117,33 @@ function updateRowLabels() {
   });
 }
 
+function preparePrint() {
+  recalculate();
+
+  const number = estimateNumberInput.value.trim() || "—";
+  const date = dateInput.value ? dateInput.value.split("-").reverse().join(".") : "—";
+  document.querySelector("#print-title").textContent = `Смета № ${number} от ${date}`;
+  document.querySelector("#print-sender").textContent = senderInput.value.trim() || "—";
+  document.querySelector("#print-recipient").textContent = recipientInput.value.trim() || "—";
+
+  for (const row of positionsBody.rows) {
+    row.querySelector('[data-print-field="name"]').textContent = row.querySelector('[data-field="name"]').value.trim() || "—";
+    row.querySelector('[data-print-field="unit"]').textContent = row.querySelector('[data-field="unit"]').value;
+
+    for (const field of ["quantity", "price"]) {
+      const value = parseNumber(row.querySelector(`[data-field="${field}"]`).value);
+      const formatted = printNumberFormatter.format(value).replace(/[\u00a0\u202f]/g, " ");
+      row.querySelector(`[data-print-field="${field}"]`).textContent = field === "price"
+        ? `${formatted} ${currencySelect.value || "₸"}`
+        : formatted;
+    }
+  }
+
+  const comment = commentInput.value.trim();
+  document.querySelector("#print-comment").textContent = comment;
+  document.querySelector(".comment-card").classList.toggle("is-empty", comment === "");
+}
+
 function addPosition({ focus = true } = {}) {
   const fragment = positionTemplate.content.cloneNode(true);
   const row = fragment.querySelector("tr");
@@ -186,6 +222,12 @@ positionsBody.addEventListener("click", (event) => {
 });
 
 form.addEventListener("submit", (event) => event.preventDefault());
+
+savePdfButton.addEventListener("click", () => {
+  preparePrint();
+  window.print();
+});
+window.addEventListener("beforeprint", preparePrint);
 
 // Используем местную дату устройства: UTC может дать соседний день.
 const today = new Date();

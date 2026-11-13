@@ -124,9 +124,19 @@
 
         <div class="document-actions">
           <p class="print-hint">В окне печати выберите «Сохранить как PDF».</p>
+          <button id="new-estimate" class="secondary-button" type="button">Новая смета</button>
+          <button id="copy-whatsapp" class="secondary-button" type="button">Скопировать для WhatsApp</button>
           <button id="save-pdf" class="add-button" type="button">Сохранить PDF</button>
         </div>
       </form>
+
+      <section id="manual-copy" class="card manual-copy" aria-labelledby="manual-copy-title" hidden>
+        <h2 id="manual-copy-title"><label for="copy-text">Скопируйте текст вручную</label></h2>
+        <p id="manual-copy-hint" class="print-hint">Автоматическое копирование недоступно. Текст выделен: нажмите Ctrl+C или выберите «Копировать» на телефоне.</p>
+        <textarea id="copy-text" rows="10" readonly aria-describedby="manual-copy-hint"></textarea>
+      </section>
+      <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+      <p id="storage-notice" class="storage-notice" role="status" hidden></p>
       <p class="privacy-note">Данные остаются в вашем браузере.</p>
       <noscript><p>Включите JavaScript в браузере, чтобы смета пересчитывалась автоматически.</p></noscript>
       <p id="row-announcement" class="visually-hidden" role="status"></p>

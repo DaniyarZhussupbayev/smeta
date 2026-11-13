@@ -309,6 +309,20 @@ input[type="date"] {
   transform: translateY(1px);
 }
 
+.secondary-button {
+  padding: 11px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.secondary-button:hover {
+  background: #edf7f5;
+}
+
 .total-card {
   padding: 28px;
   border-top: 3px solid var(--accent);
@@ -385,9 +399,49 @@ textarea {
 
 .document-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 20px;
+}
+
+.document-actions .print-hint {
+  flex: 1 1 220px;
+}
+
+.manual-copy {
+  margin-top: 24px;
+  padding: 24px 28px;
+}
+
+.manual-copy .print-hint {
+  margin-top: 10px;
+}
+
+.storage-notice {
+  margin-top: 20px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.copy-status {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 10;
+  max-width: calc(100% - 32px);
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 4px 16px rgb(32 43 53 / 15%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.copy-status:empty {
+  display: none;
 }
 
 .print-hint {
@@ -605,6 +659,14 @@ textarea {
     gap: 12px;
   }
 
+  .document-actions .print-hint {
+    flex: initial;
+  }
+
+  .manual-copy {
+    padding: 20px;
+  }
+
   .print-hint {
     text-align: center;
   }
@@ -640,6 +702,9 @@ textarea {
   .positions-actions,
   .calculation-settings,
   .document-actions,
+  .manual-copy,
+  .copy-status,
+  .storage-notice,
   .currency-note,
   .privacy-note,
   .mobile-label,

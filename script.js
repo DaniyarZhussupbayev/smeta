@@ -31,8 +31,15 @@ const copyStatus = document.querySelector("#copy-status");
 const manualCopy = document.querySelector("#manual-copy");
 const copyTextInput = document.querySelector("#copy-text");
 const storageNotice = document.querySelector("#storage-notice");
+const calculationNameInput = document.querySelector("#calculation-name");
+const saveCalculationButton = document.querySelector("#save-calculation");
+const savedCalculationsSelect = document.querySelector("#saved-calculations");
+const openCalculationButton = document.querySelector("#open-calculation");
+const savedCalculationsStatus = document.querySelector("#saved-calculations-status");
+const openCalculationStatus = document.querySelector("#open-calculation-status");
 
 const draftStorageKey = "smeta-za-5-minut.draft.v1";
+const savedCalculationsStorageKey = "smeta-za-5-minut.saved.v1";
 const draftFields = {
   sender: senderInput,
   recipient: recipientInput,
@@ -114,35 +121,167 @@ function saveDraft() {
   }
 }
 
+function validateDraft(draft) {
+  // Сохраняем совместимость с черновиками, в которых ещё нет вида сметы.
+  if (draft?.fields && draft.fields.type === undefined) {
+    draft.fields.type = "РАБОТА";
+  }
+  const validFields = draft?.fields && Object.keys(draftFields).every((key) => typeof draft.fields[key] === "string");
+  const validPositions = Array.isArray(draft?.positions) && draft.positions.every((position) => (
+    position && ["name", "quantity", "unit", "price"].every((field) => typeof position[field] === "string")
+    && [...estimateTypeSettings["ТОВАР"].units, "шт", "час", "услуга"].includes(position.unit)
+  ));
+
+  if (draft?.version !== 1 || !validFields || !validPositions
+    || !["₸", "₽", "$", "€"].includes(draft.fields.currency)
+    || !["РАБОТА", "УСЛУГА", "ТОВАР"].includes(draft.fields.type)) {
+    throw new Error("Некорректный черновик");
+  }
+  return draft;
+}
+
 function readDraft() {
   try {
     const saved = window.localStorage.getItem(draftStorageKey);
-    if (saved === null) {
-      return null;
-    }
-
-    const draft = JSON.parse(saved);
-    // Сохраняем совместимость с черновиками, в которых ещё нет вида сметы.
-    if (draft?.fields && draft.fields.type === undefined) {
-      draft.fields.type = "РАБОТА";
-    }
-    const validFields = draft?.fields && Object.keys(draftFields).every((key) => typeof draft.fields[key] === "string");
-    const validPositions = Array.isArray(draft?.positions) && draft.positions.every((position) => (
-      position && ["name", "quantity", "unit", "price"].every((field) => typeof position[field] === "string")
-      && [...estimateTypeSettings["ТОВАР"].units, "шт", "час", "услуга"].includes(position.unit)
-    ));
-
-    if (draft?.version !== 1 || !validFields || !validPositions
-      || !["₸", "₽", "$", "€"].includes(draft.fields.currency)
-      || !["РАБОТА", "УСЛУГА", "ТОВАР"].includes(draft.fields.type)) {
-      throw new Error("Некорректный черновик");
-    }
-
-    return draft;
+    return saved === null ? null : validateDraft(JSON.parse(saved));
   } catch {
     storageNotice.textContent = "Не удалось восстановить черновик. Можно заполнить смету заново и сохранить её в PDF или скопировать текст.";
     storageNotice.hidden = false;
     return null;
+  }
+}
+
+function applyDraft(draft) {
+  const wasRestoringDraft = isRestoringDraft;
+  isRestoringDraft = true;
+  try {
+    for (const [key, input] of Object.entries(draftFields)) {
+      input.value = draft.fields[key];
+    }
+    positionsBody.replaceChildren();
+    for (const position of draft.positions) {
+      addPosition({ focus: false, values: position });
+    }
+    if (positionsBody.rows.length === 0) {
+      addPosition({ focus: false });
+    }
+    updatePositionsForType();
+    recalculate();
+    clearCopyFeedback();
+  } finally {
+    isRestoringDraft = wasRestoringDraft;
+  }
+}
+
+function readSavedCalculations() {
+  const saved = window.localStorage.getItem(savedCalculationsStorageKey);
+  if (saved === null) {
+    return [];
+  }
+  const archive = JSON.parse(saved);
+  if (archive?.version !== 1 || !Array.isArray(archive.calculations)) {
+    throw new Error("Некорректный список расчётов");
+  }
+  const ids = new Set();
+  for (const calculation of archive.calculations) {
+    if (!calculation || typeof calculation.id !== "string" || !calculation.id
+      || ids.has(calculation.id) || typeof calculation.name !== "string" || !calculation.name.trim()
+      || typeof calculation.savedAt !== "string" || !Number.isFinite(Date.parse(calculation.savedAt))) {
+      throw new Error("Некорректный сохранённый расчёт");
+    }
+    ids.add(calculation.id);
+    validateDraft(calculation.draft);
+  }
+  return archive.calculations.sort((first, second) => Date.parse(second.savedAt) - Date.parse(first.savedAt));
+}
+
+function showSavedCalculationsStatus(message, isError = false, target = savedCalculationsStatus) {
+  target.textContent = message;
+  target.classList.toggle("is-error", isError);
+}
+
+function renderSavedCalculations(calculations, selectedId = "") {
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = calculations.length ? "Выберите расчёт" : "Пока нет сохранённых расчётов";
+  const options = calculations.map((calculation) => {
+    const option = document.createElement("option");
+    option.value = calculation.id;
+    option.textContent = `${calculation.name} — ${new Date(calculation.savedAt).toLocaleString("ru-RU")}`;
+    return option;
+  });
+  savedCalculationsSelect.replaceChildren(placeholder, ...options);
+  savedCalculationsSelect.disabled = calculations.length === 0;
+  savedCalculationsSelect.value = calculations.some((calculation) => calculation.id === selectedId) ? selectedId : "";
+  openCalculationButton.disabled = !savedCalculationsSelect.value;
+}
+
+function refreshSavedCalculations() {
+  try {
+    renderSavedCalculations(readSavedCalculations(), savedCalculationsSelect.value);
+    showSavedCalculationsStatus("", false, openCalculationStatus);
+  } catch {
+    renderSavedCalculations([]);
+    showSavedCalculationsStatus("Не удалось прочитать сохранённые расчёты. Данные не перезаписаны. Проверьте доступ к хранилищу браузера и обновите страницу.", true, openCalculationStatus);
+  }
+}
+
+function saveCalculation() {
+  try {
+    // Читаем список заново, чтобы учесть сохранения из другой вкладки.
+    const calculations = readSavedCalculations();
+    recalculate();
+    const draft = collectDraft();
+    const defaultName = [draft.fields.number.trim() ? `Смета № ${draft.fields.number.trim()}` : "Смета",
+      draft.fields.type, draft.fields.recipient.trim()].filter(Boolean).join(" — ");
+    let id;
+    do {
+      id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    } while (calculations.some((calculation) => calculation.id === id));
+    const calculation = {
+      id,
+      name: (calculationNameInput.value.trim() || defaultName).slice(0, 120),
+      savedAt: new Date().toISOString(),
+      draft,
+    };
+    calculations.unshift(calculation);
+    window.localStorage.setItem(savedCalculationsStorageKey, JSON.stringify({ version: 1, calculations }));
+    renderSavedCalculations(calculations, calculation.id);
+    calculationNameInput.value = calculation.name;
+    saveDraft();
+    showSavedCalculationsStatus("", false, openCalculationStatus);
+    showSavedCalculationsStatus(`Расчёт «${calculation.name}» сохранён.`);
+  } catch {
+    showSavedCalculationsStatus("Не удалось сохранить расчёт. Возможно, хранилище браузера недоступно или заполнено. Ранее сохранённые расчёты не перезаписаны. Текущую смету можно сохранить в PDF.", true);
+  }
+}
+
+function openSavedCalculation() {
+  const selectedId = savedCalculationsSelect.value;
+  if (!selectedId) {
+    return;
+  }
+  try {
+    const calculations = readSavedCalculations();
+    const calculation = calculations.find((item) => item.id === selectedId);
+    if (!calculation) {
+      renderSavedCalculations(calculations);
+      showSavedCalculationsStatus("Выбранный расчёт больше недоступен. Выберите другой расчёт.", true, openCalculationStatus);
+      return;
+    }
+    if (JSON.stringify(collectDraft()) !== JSON.stringify(calculation.draft)
+      && !window.confirm("Открыть выбранный расчёт вместо текущей сметы? Если текущая смета нужна, нажмите «Отмена» и сначала сохраните её.")) {
+      return;
+    }
+    applyDraft(calculation.draft);
+    calculationNameInput.value = calculation.name;
+    renderSavedCalculations(calculations, calculation.id);
+    saveDraft();
+    senderInput.focus();
+    showSavedCalculationsStatus("");
+    showSavedCalculationsStatus(`Открыт расчёт «${calculation.name}». Изменения можно сохранить отдельной копией.`, false, openCalculationStatus);
+  } catch {
+    showSavedCalculationsStatus("Не удалось открыть сохранённый расчёт. Проверьте доступ к хранилищу браузера и обновите страницу.", true, openCalculationStatus);
   }
 }
 
@@ -391,6 +530,11 @@ function startNewEstimate() {
   addPosition({ focus: false });
   isRestoringDraft = false;
   clearCopyFeedback();
+  calculationNameInput.value = "";
+  savedCalculationsSelect.value = "";
+  openCalculationButton.disabled = true;
+  showSavedCalculationsStatus("");
+  showSavedCalculationsStatus("", false, openCalculationStatus);
   saveDraft();
   senderInput.focus();
   rowAnnouncement.textContent = `Создана новая смета № ${number}.`;
@@ -493,16 +637,21 @@ savePdfButton.addEventListener("click", () => {
 window.addEventListener("beforeprint", preparePrint);
 newEstimateButton.addEventListener("click", startNewEstimate);
 copyWhatsappButton.addEventListener("click", copyForWhatsapp);
+saveCalculationButton.addEventListener("click", saveCalculation);
+openCalculationButton.addEventListener("click", openSavedCalculation);
+savedCalculationsSelect.addEventListener("change", () => {
+  openCalculationButton.disabled = !savedCalculationsSelect.value;
+});
+window.addEventListener("storage", (event) => {
+  if (event.key === savedCalculationsStorageKey || event.key === null) {
+    refreshSavedCalculations();
+  }
+});
 
 dateInput.value = getToday();
 const savedDraft = readDraft();
 if (savedDraft) {
-  for (const [key, input] of Object.entries(draftFields)) {
-    input.value = savedDraft.fields[key];
-  }
-  for (const position of savedDraft.positions) {
-    addPosition({ focus: false, values: position });
-  }
+  applyDraft(savedDraft);
 }
 if (positionsBody.rows.length === 0) {
   addPosition({ focus: false });
@@ -510,3 +659,4 @@ if (positionsBody.rows.length === 0) {
 isRestoringDraft = false;
 updatePositionsForType();
 recalculate();
+refreshSavedCalculations();

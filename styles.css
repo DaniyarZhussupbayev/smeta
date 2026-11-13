@@ -153,6 +153,48 @@ h2 {
   font-weight: 600;
 }
 
+.saved-calculations {
+  padding: 26px 28px 28px;
+}
+
+.saved-calculations-picker {
+  margin-top: 22px;
+}
+
+.saved-calculations .saved-calculation-row {
+  margin-top: 20px;
+}
+
+.saved-calculation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: end;
+  gap: 12px;
+}
+
+.saved-calculation-row button:disabled {
+  border-color: var(--border);
+  background: #f1f4f6;
+  color: var(--muted);
+  cursor: default;
+}
+
+.saved-calculations-status {
+  margin-top: 16px;
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.saved-calculations-status:empty {
+  display: none;
+}
+
+.saved-calculations-status.is-error {
+  color: #b42318;
+}
+
 input[type="date"] {
   min-width: 0;
   max-width: 100%;
@@ -544,6 +586,14 @@ textarea {
     padding: 20px;
   }
 
+  .saved-calculations {
+    padding: 20px;
+  }
+
+  .saved-calculation-row {
+    grid-template-columns: 1fr;
+  }
+
   .details-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -713,6 +763,8 @@ textarea {
   }
 
   .page-header,
+  .saved-calculations,
+  .saved-calculations-picker,
   button,
   input,
   select,

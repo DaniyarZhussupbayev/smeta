@@ -24,6 +24,18 @@
       <form id="estimate-form" autocomplete="off">
         <section class="card details" aria-labelledby="details-title">
           <h2 id="details-title">Реквизиты</h2>
+          <div class="saved-calculations-picker">
+            <div class="saved-calculation-row">
+              <label class="field" for="saved-calculations">
+                <span>Выбрать ранее сохранённый расчёт</span>
+                <select id="saved-calculations" disabled>
+                  <option value="">Пока нет сохранённых расчётов</option>
+                </select>
+              </label>
+              <button id="open-calculation" class="secondary-button" type="button" disabled>Открыть</button>
+            </div>
+            <p id="open-calculation-status" class="saved-calculations-status" role="status" aria-live="polite"></p>
+          </div>
           <div class="details-grid">
             <label class="field" for="sender">
               <span>От кого</span>
@@ -134,6 +146,18 @@
           <h2 id="comment-title"><label for="comment">Комментарий</label></h2>
           <textarea id="comment" name="comment" rows="3" placeholder="Сроки выполнения, условия оплаты"></textarea>
           <p id="print-comment" class="print-only comment-text"></p>
+        </section>
+
+        <section class="card saved-calculations" aria-labelledby="saved-calculations-title">
+          <h2 id="saved-calculations-title">Сохранённые расчёты</h2>
+          <div class="saved-calculation-row">
+            <label class="field" for="calculation-name">
+              <span>Название расчёта</span>
+              <input id="calculation-name" type="text" maxlength="120" placeholder="Например, Ремонт офиса">
+            </label>
+            <button id="save-calculation" class="add-button" type="button">Сохранить расчёт</button>
+          </div>
+          <p id="saved-calculations-status" class="saved-calculations-status" role="status" aria-live="polite"></p>
         </section>
         <p class="print-only signature">Подпись ____________________</p>
 

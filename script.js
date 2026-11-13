@@ -7,9 +7,24 @@ const addPositionButton = document.querySelector("#add-position");
 const grandTotal = document.querySelector("#grand-total");
 const rowAnnouncement = document.querySelector("#row-announcement");
 const dateInput = document.querySelector("#estimate-date");
+const discountInput = document.querySelector("#discount-percent");
+const vatInput = document.querySelector("#vat-percent");
+const currencySelect = document.querySelector("#currency");
+const currencyNote = document.querySelector("#currency-note");
+const subtotalOutput = document.querySelector("#subtotal");
+const discountOutput = document.querySelector("#discount-amount");
+const discountedOutput = document.querySelector("#discounted-subtotal");
+const vatOutput = document.querySelector("#vat-amount");
+const discountRow = document.querySelector("#discount-row");
+const discountedRow = document.querySelector("#discounted-row");
+const vatRow = document.querySelector("#vat-row");
 
 const numberFormatter = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 2,
+});
+
+const moneyFormatter = new Intl.NumberFormat("ru-RU", {
+  maximumFractionDigits: 0,
 });
 
 let nextRowId = 0;
@@ -32,28 +47,58 @@ function formatNumber(number) {
 }
 
 function formatMoney(number) {
-  return `${formatNumber(number)} ₸`;
+  const safeNumber = Number.isFinite(number) ? number : 0;
+  const amount = moneyFormatter.format(safeNumber).replace(/[\u00a0\u202f]/g, " ");
+  return `${amount} ${currencySelect.value || "₸"}`;
 }
 
-function calculateLineCents(row) {
+function roundAmount(number) {
+  const rounded = Math.round(number);
+  return Number.isSafeInteger(rounded) ? rounded : 0;
+}
+
+function calculateLineTotal(row) {
   const quantity = parseNumber(row.querySelector('[data-field="quantity"]').value);
   const price = parseNumber(row.querySelector('[data-field="price"]').value);
-  // Округляем каждую строку до сотых и складываем целые числа, чтобы избежать
-  // накопления погрешности при сложении денежных сумм.
-  const cents = Math.round((quantity * price + Number.EPSILON) * 100);
-  return Number.isSafeInteger(cents) ? cents : 0;
+  return roundAmount(quantity * price);
+}
+
+function calculateTotals(subtotal, discountPercent, vatPercent) {
+  // Все этапы округляются до целых, чтобы видимые строки сходились с итогом.
+  const discount = roundAmount(subtotal * (Math.min(discountPercent, 100) / 100));
+  const discountedSubtotal = subtotal - discount;
+  const vat = roundAmount(discountedSubtotal * (vatPercent / 100));
+
+  return {
+    discount,
+    discountedSubtotal,
+    vat,
+    total: roundAmount(discountedSubtotal + vat),
+  };
 }
 
 function recalculate() {
-  let totalCents = 0;
+  let subtotal = 0;
+  const currency = currencySelect.value || "₸";
 
   for (const row of positionsBody.rows) {
-    const lineCents = calculateLineCents(row);
-    totalCents += lineCents;
-    row.querySelector('[data-field="total"]').textContent = formatMoney(lineCents / 100);
+    const lineTotal = calculateLineTotal(row);
+    subtotal += lineTotal;
+    row.querySelector('[data-field="total"]').textContent = formatMoney(lineTotal);
+    row.querySelector(".price-currency").textContent = currency;
+    row.querySelector('[data-field="price"]').setAttribute("aria-label", `Цена, ${currency}`);
   }
 
-  grandTotal.textContent = formatMoney(totalCents / 100);
+  const totals = calculateTotals(roundAmount(subtotal), parseNumber(discountInput.value), parseNumber(vatInput.value));
+  subtotalOutput.textContent = formatMoney(roundAmount(subtotal));
+  discountOutput.textContent = formatMoney(totals.discount);
+  discountedOutput.textContent = formatMoney(totals.discountedSubtotal);
+  vatOutput.textContent = formatMoney(totals.vat);
+  grandTotal.textContent = formatMoney(totals.total);
+  discountRow.hidden = totals.discount === 0;
+  discountedRow.hidden = totals.discountedSubtotal === 0;
+  vatRow.hidden = totals.vat === 0;
+  currencyNote.textContent = `Все суммы — ${currency}`;
 }
 
 function updateRowLabels() {
@@ -77,7 +122,6 @@ function addPosition({ focus = true } = {}) {
     input.name = id;
   }
 
-  row.querySelector('[data-field="price"]').setAttribute("aria-label", "Цена, тенге");
   positionsBody.append(fragment);
   updateRowLabels();
   recalculate();
@@ -90,6 +134,16 @@ function addPosition({ focus = true } = {}) {
 
 addPositionButton.addEventListener("click", () => addPosition());
 positionsBody.addEventListener("input", recalculate);
+discountInput.addEventListener("input", recalculate);
+vatInput.addEventListener("input", recalculate);
+currencySelect.addEventListener("change", recalculate);
+
+discountInput.addEventListener("change", () => {
+  if (parseNumber(discountInput.value) > 100) {
+    discountInput.value = "100";
+    recalculate();
+  }
+});
 
 positionsBody.addEventListener("focusout", (event) => {
   if (event.target.matches('[data-field="price"]') && event.target.value.trim() !== "") {

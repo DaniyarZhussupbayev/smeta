@@ -41,7 +41,7 @@
         <section class="card positions" aria-labelledby="positions-title">
           <div class="positions-header">
             <h2 id="positions-title">Позиции</h2>
-            <span class="currency-note">Все суммы в тенге</span>
+            <span id="currency-note" class="currency-note">Все суммы — ₸</span>
           </div>
 
           <table class="positions-table" aria-labelledby="positions-title">
@@ -62,11 +62,52 @@
             <button id="add-position" class="add-button" type="button">+ Добавить позицию</button>
             <p id="keyboard-hint" class="keyboard-hint">Enter в последней строке добавит позицию</p>
           </div>
+
+          <div class="calculation-settings">
+            <label class="field" for="discount-percent">
+              <span>Скидка, %</span>
+              <input id="discount-percent" name="discount-percent" type="text" inputmode="decimal" value="0" spellcheck="false" aria-describedby="discount-hint">
+              <span id="discount-hint" class="setting-hint">От 0 до 100 %</span>
+            </label>
+            <label class="field" for="vat-percent">
+              <span>НДС, %</span>
+              <input id="vat-percent" name="vat-percent" type="text" inputmode="decimal" value="0" spellcheck="false">
+            </label>
+            <label class="field" for="currency">
+              <span>Валюта</span>
+              <select id="currency" name="currency">
+                <option value="₸">₸ — тенге</option>
+                <option value="₽">₽ — рубль</option>
+                <option value="$">$ — доллар</option>
+                <option value="€">€ — евро</option>
+              </select>
+            </label>
+          </div>
         </section>
 
         <section class="card total-card" aria-labelledby="total-title">
-          <h2 id="total-title">Итого к оплате</h2>
-          <output id="grand-total" class="grand-total" aria-live="polite" aria-atomic="true">0 ₸</output>
+          <dl class="totals-breakdown">
+            <div class="summary-row">
+              <dt>Сумма</dt>
+              <dd id="subtotal">0 ₸</dd>
+            </div>
+            <div id="discount-row" class="summary-row" hidden>
+              <dt>Скидка</dt>
+              <dd id="discount-amount">0 ₸</dd>
+            </div>
+            <div id="discounted-row" class="summary-row" hidden>
+              <dt>Сумма со скидкой</dt>
+              <dd id="discounted-subtotal">0 ₸</dd>
+            </div>
+            <div id="vat-row" class="summary-row" hidden>
+              <dt>НДС</dt>
+              <dd id="vat-amount">0 ₸</dd>
+            </div>
+          </dl>
+          <div class="total-payable">
+            <h2 id="total-title">Итого к оплате</h2>
+            <output id="grand-total" class="grand-total" aria-live="polite" aria-atomic="true">0 ₸</output>
+          </div>
         </section>
       </form>
       <p class="privacy-note">Данные остаются в вашем браузере.</p>

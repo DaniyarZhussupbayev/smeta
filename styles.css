@@ -271,6 +271,21 @@ input[type="date"] {
   padding: 20px 28px 24px;
 }
 
+.calculation-settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+  padding: 22px 28px 28px;
+  border-top: 1px solid #edf0f2;
+}
+
+.field > .setting-hint {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
 .add-button {
   padding: 11px 18px;
   border: 1px solid var(--accent);
@@ -291,12 +306,48 @@ input[type="date"] {
 }
 
 .total-card {
+  padding: 28px;
+  border-top: 3px solid var(--accent);
+}
+
+.totals-breakdown {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 22px;
+}
+
+.summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  line-height: 1.5;
+}
+
+.summary-row[hidden] {
+  display: none;
+}
+
+.summary-row dt {
+  color: var(--muted);
+}
+
+.summary-row dd {
+  min-width: 0;
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.total-payable {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 28px;
-  border-top: 3px solid var(--accent);
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
 }
 
 .total-card h2 {
@@ -493,10 +544,18 @@ input[type="date"] {
   }
 
   .total-card {
+    padding: 24px 20px;
+  }
+
+  .total-payable {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    padding: 24px 20px;
+  }
+
+  .calculation-settings {
+    grid-template-columns: 1fr;
+    padding: 20px;
   }
 
   .grand-total {

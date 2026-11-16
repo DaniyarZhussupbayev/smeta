@@ -6,6 +6,7 @@
     <meta name="color-scheme" content="light">
     <title>Смета за 5 минут</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="print.css" media="print">
     <script src="script.js" defer></script>
   </head>
   <body>
@@ -164,6 +165,7 @@
         <div class="document-actions">
           <p class="print-hint">В окне печати выберите «Сохранить как PDF».</p>
           <button id="new-estimate" class="secondary-button" type="button">Новая смета</button>
+          <button id="preview-estimate" class="secondary-button" type="button" aria-haspopup="dialog" aria-controls="preview-dialog">Предварительный просмотр</button>
           <button id="copy-whatsapp" class="secondary-button" type="button">Скопировать для WhatsApp</button>
           <button id="save-pdf" class="add-button" type="button">Сохранить PDF</button>
         </div>
@@ -180,6 +182,21 @@
       <noscript><p>Включите JavaScript в браузере, чтобы смета пересчитывалась автоматически.</p></noscript>
       <p id="row-announcement" class="visually-hidden" role="status"></p>
     </main>
+
+    <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title">
+      <div class="preview-toolbar">
+        <h2 id="preview-title">Предварительный просмотр</h2>
+        <div class="preview-controls">
+          <button id="close-preview" class="secondary-button" type="button" autofocus>Вернуться к редактированию</button>
+          <button id="preview-save-pdf" class="add-button" type="button">Сохранить PDF</button>
+        </div>
+      </div>
+      <div id="preview-stage" class="preview-stage" role="region" aria-label="Просмотр листа сметы" tabindex="0">
+        <div id="preview-sheet" class="preview-sheet">
+          <iframe id="preview-frame" class="preview-frame" title="Готовая смета" sandbox="allow-same-origin"></iframe>
+        </div>
+      </div>
+    </dialog>
 
     <template id="position-template">
       <tr class="position-row">

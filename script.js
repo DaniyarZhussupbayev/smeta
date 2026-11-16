@@ -25,6 +25,13 @@ const estimateTypeSelect = document.querySelector("#estimate-type");
 const positionNameHeading = document.querySelector("#position-name-heading");
 const commentInput = document.querySelector("#comment");
 const savePdfButton = document.querySelector("#save-pdf");
+const previewButton = document.querySelector("#preview-estimate");
+const previewDialog = document.querySelector("#preview-dialog");
+const closePreviewButton = document.querySelector("#close-preview");
+const previewSavePdfButton = document.querySelector("#preview-save-pdf");
+const previewStage = document.querySelector("#preview-stage");
+const previewSheet = document.querySelector("#preview-sheet");
+const previewFrame = document.querySelector("#preview-frame");
 const newEstimateButton = document.querySelector("#new-estimate");
 const copyWhatsappButton = document.querySelector("#copy-whatsapp");
 const copyStatus = document.querySelector("#copy-status");
@@ -433,6 +440,52 @@ function preparePrint() {
   document.querySelector(".comment-card").classList.toggle("is-empty", comment === "");
 }
 
+function fitPreview() {
+  const page = previewFrame.contentDocument?.querySelector(".page");
+  if (!previewDialog.open || !page) {
+    return;
+  }
+
+  // Сохраняем ширину А4 и уменьшаем весь лист для узкого экрана.
+  const { width, height } = page.getBoundingClientRect();
+  if (!width) {
+    return;
+  }
+  const scale = Math.min(1, Math.max(1, previewStage.clientWidth - 32) / width);
+  previewFrame.style.height = `${Math.ceil(height)}px`;
+  previewFrame.style.transform = `scale(${scale})`;
+  previewSheet.style.width = `${width * scale}px`;
+  previewSheet.style.height = `${Math.ceil(height) * scale}px`;
+}
+
+function openPreview() {
+  preparePrint();
+
+  // Копируем подготовленные значения: просмотр и PDF используют один макет.
+  const previewDocument = document.implementation.createHTMLDocument(getEstimateHeading());
+  previewDocument.documentElement.lang = "ru";
+  for (const stylesheet of ["styles.css", "print.css"]) {
+    const link = previewDocument.createElement("link");
+    link.rel = "stylesheet";
+    link.href = new URL(stylesheet, document.baseURI).href;
+    previewDocument.head.append(link);
+  }
+  const page = document.querySelector(".page").cloneNode(true);
+  for (const control of page.querySelectorAll("input, select, textarea, button, img")) {
+    control.remove();
+  }
+  previewDocument.body.append(page);
+  previewFrame.srcdoc = `<!doctype html>${previewDocument.documentElement.outerHTML}`;
+  previewDialog.showModal();
+  document.body.classList.add("preview-open");
+  previewStage.scrollTop = 0;
+}
+
+function savePdf() {
+  preparePrint();
+  window.print();
+}
+
 function buildShareText() {
   recalculate();
   const lines = [getEstimateHeading()];
@@ -630,10 +683,24 @@ positionsBody.addEventListener("click", (event) => {
 
 form.addEventListener("submit", (event) => event.preventDefault());
 
-savePdfButton.addEventListener("click", () => {
-  preparePrint();
-  window.print();
+savePdfButton.addEventListener("click", savePdf);
+previewSavePdfButton.addEventListener("click", savePdf);
+previewButton.addEventListener("click", openPreview);
+closePreviewButton.addEventListener("click", () => previewDialog.close());
+previewDialog.addEventListener("close", () => {
+  document.body.classList.remove("preview-open");
+  previewButton.focus({ preventScroll: true });
 });
+previewFrame.addEventListener("load", () => {
+  fitPreview();
+  previewFrame.contentDocument?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      previewDialog.close();
+    }
+  });
+});
+new ResizeObserver(fitPreview).observe(previewStage);
 window.addEventListener("beforeprint", preparePrint);
 newEstimateButton.addEventListener("click", startNewEstimate);
 copyWhatsappButton.addEventListener("click", copyForWhatsapp);

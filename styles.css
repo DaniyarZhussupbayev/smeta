@@ -79,10 +79,19 @@ textarea:focus {
 
 .page-header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: clamp(80px, 20vw, 144px) minmax(0, 1fr) clamp(80px, 20vw, 144px);
   align-items: center;
   gap: 24px;
   margin-bottom: 30px;
+}
+
+.page-header > div {
+  min-width: 0;
+  text-align: center;
+}
+
+.page-header h1 {
+  color: #15803d;
 }
 
 .page-header-image {
@@ -384,6 +393,10 @@ input[type="date"] {
   background: #edf7f5;
 }
 
+#clear-estimate {
+  color: #b42318;
+}
+
 .total-card {
   padding: 28px;
   border-top: 3px solid var(--accent);
@@ -651,6 +664,8 @@ textarea {
   }
 
   .page-header {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
     gap: 12px;
     margin-bottom: 24px;
   }

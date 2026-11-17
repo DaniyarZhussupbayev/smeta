@@ -575,8 +575,10 @@ function startNewEstimate() {
   }
 
   const number = nextEstimateNumber(estimateNumberInput.value);
+  const sender = senderInput.value;
   isRestoringDraft = true;
   form.reset();
+  senderInput.value = sender;
   positionsBody.replaceChildren();
   updatePositionsForType();
   estimateNumberInput.value = number;

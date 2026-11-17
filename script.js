@@ -4,6 +4,7 @@ const form = document.querySelector("#estimate-form");
 const positionsBody = document.querySelector("#positions-body");
 const positionTemplate = document.querySelector("#position-template");
 const addPositionButton = document.querySelector("#add-position");
+const clearEstimateButton = document.querySelector("#clear-estimate");
 const grandTotal = document.querySelector("#grand-total");
 const rowAnnouncement = document.querySelector("#row-announcement");
 const dateInput = document.querySelector("#estimate-date");
@@ -593,6 +594,17 @@ function startNewEstimate() {
   rowAnnouncement.textContent = `Создана новая смета № ${number}.`;
 }
 
+function clearEstimatePositions() {
+  if (!window.confirm("Удалить все позиции сметы? Реквизиты, комментарий и настройки сохранятся.")) {
+    return;
+  }
+
+  positionsBody.replaceChildren();
+  addPosition();
+  clearCopyFeedback();
+  rowAnnouncement.textContent = "Все позиции удалены. Добавлена одна пустая строка.";
+}
+
 function addPosition({ focus = true, values } = {}) {
   const fragment = positionTemplate.content.cloneNode(true);
   const row = fragment.querySelector("tr");
@@ -623,6 +635,7 @@ function addPosition({ focus = true, values } = {}) {
 }
 
 addPositionButton.addEventListener("click", () => addPosition());
+clearEstimateButton.addEventListener("click", clearEstimatePositions);
 positionsBody.addEventListener("input", recalculate);
 form.addEventListener("input", saveDraft);
 form.addEventListener("change", saveDraft);

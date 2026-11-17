@@ -323,10 +323,17 @@ input[type="date"] {
 
 .positions-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   padding: 20px 28px 24px;
+}
+
+.positions-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .calculation-settings {
@@ -765,6 +772,10 @@ textarea {
 
   .keyboard-hint {
     text-align: center;
+  }
+
+  .positions-buttons {
+    flex-direction: column;
   }
 
   .total-card {
